@@ -12,6 +12,8 @@ build/
 # Modelos (opcional: descomentar para subir .tflite)
 # models/*.keras
 # models/*.tflite
+models/
+
 
 # Dataset (muy grande)
 dataset/
@@ -32,3 +34,5 @@ Thumbs.db
 
 # Jupyter
 .ipynb_checkpoints/
+models/
+dataset/
