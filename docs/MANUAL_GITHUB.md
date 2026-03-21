@@ -169,3 +169,7 @@ git push
 
 - **Dataset y modelos:** Por tamaño, suelen excluirse con `.gitignore`. Si quieres compartir el modelo entrenado, puedes subir solo `models/ecosort_model.tflite` (o INT8) y documentar cómo entrenar.
 - **Cuenta distinta:** Si usas otra cuenta, asegúrate de que esa sesión esté activa en el navegador al crear el repo, y que el token/SSH corresponda a esa cuenta.
+
+---
+
+**Siguiente paso:** llevar el proyecto a la Raspberry Pi → [`RASPBERRY_PI_PRIMERA_VEZ.md`](RASPBERRY_PI_PRIMERA_VEZ.md)

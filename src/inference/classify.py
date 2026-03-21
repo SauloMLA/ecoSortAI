@@ -19,6 +19,7 @@ Archivos necesarios:
     o models/ecosort_model_int8.tflite (modelo cuantizado, mas rapido)
 """
 
+import argparse
 import os
 import sys
 import time
@@ -62,7 +63,8 @@ class EcoSortClassifier:
     el diseno mecanico este finalizado.
     """
 
-    def __init__(self, model_path=None):
+    def __init__(self, model_path=None, keyboard_trigger=False):
+        self._keyboard_trigger = keyboard_trigger
         # Seleccionar modelo: preferir INT8 si existe, si no float32
         if model_path is None:
             if os.path.exists(TFLITE_INT8_PATH):
@@ -244,15 +246,15 @@ class EcoSortClassifier:
             print(f"  [SIM] Desviaria a contenedor: {clase.upper()}")
 
     def esperar_objeto(self):
-        """Espera a que el sensor IR detecte un objeto."""
-        if IS_RASPBERRY_PI:
+        """Espera a que el sensor IR detecte un objeto (o ENTER si --keyboard)."""
+        if IS_RASPBERRY_PI and not getattr(self, '_keyboard_trigger', False):
             print("Esperando objeto en sensor IR...", end='', flush=True)
             GPIO.wait_for_edge(TRIGGER_PIN, GPIO.FALLING)
             time.sleep(0.3)
             print(" DETECTADO!")
             return True
         else:
-            input("Presiona ENTER para simular deteccion de objeto...")
+            input("Presiona ENTER para capturar y clasificar...")
             return True
 
     def capturar_frame(self):
@@ -342,7 +344,15 @@ class EcoSortClassifier:
 
 
 def main():
-    clasificador = EcoSortClassifier()
+    parser = argparse.ArgumentParser(description="EcoSort IA — clasificador de residuos")
+    parser.add_argument(
+        "--keyboard",
+        action="store_true",
+        help="Usar ENTER en vez del sensor IR (para probar sin boton fisico)",
+    )
+    args = parser.parse_args()
+
+    clasificador = EcoSortClassifier(keyboard_trigger=args.keyboard)
     clasificador.loop_principal()
 
 

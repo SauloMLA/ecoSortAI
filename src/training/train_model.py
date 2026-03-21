@@ -236,10 +236,12 @@ def convertir_a_tflite(model):
         tf.saved_model.save(model, saved_model_dir)
     print("  SavedModel OK")
 
-    # Paso 2: Convertir a TFLite FP32
+    # Paso 2: Convertir a TFLite FP32 (compatible con tflite_runtime en RPi)
     try:
         print("Convirtiendo a TFLite (FP32)...")
         converter = tf.lite.TFLiteConverter.from_saved_model(saved_model_dir)
+        # Solo ops TFLite nativas = mejor compatibilidad con tflite_runtime en RPi
+        converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS]
         tflite_model = converter.convert()
         with open(TFLITE_MODEL_PATH, 'wb') as f:
             f.write(tflite_model)
