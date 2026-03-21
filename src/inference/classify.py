@@ -104,9 +104,45 @@ class EcoSortClassifier:
 
     def _cargar_modelo(self, model_path):
         """Carga el modelo TFLite en memoria."""
+        model_path = os.path.abspath(model_path)
         print(f"\nCargando modelo: {model_path}")
-        self.interpreter = tflite.Interpreter(model_path=model_path)
-        self.interpreter.allocate_tensors()
+
+        def _crear_interpreter(path):
+            """Intenta cargar con model_path, luego con model_content."""
+            try:
+                return tflite.Interpreter(model_path=path)
+            except (SystemError, OSError):
+                with open(path, 'rb') as f:
+                    return tflite.Interpreter(model_content=f.read())
+
+        # En RPi, INT8 suele fallar por ops incompatibles; preferir FP32
+        fp32_path = os.path.abspath(TFLITE_MODEL_PATH)
+        int8_path = os.path.abspath(TFLITE_INT8_PATH)
+        if IS_RASPBERRY_PI and os.path.exists(fp32_path):
+            candidates = [fp32_path]
+            if os.path.exists(int8_path):
+                candidates.append(int8_path)
+        else:
+            candidates = [model_path]
+            if model_path == int8_path and os.path.exists(fp32_path):
+                candidates.append(fp32_path)
+
+        loaded_path = None
+        for p in candidates:
+            try:
+                self.interpreter = _crear_interpreter(p)
+                self.interpreter.allocate_tensors()
+                loaded_path = p
+                break
+            except (SystemError, OSError, Exception) as e:
+                if p == candidates[-1]:
+                    print(f"\nERROR al cargar modelo: {e}")
+                    if len(candidates) > 1:
+                        print("  Probados INT8 y FP32. El runtime de la Pi puede ser incompatible.")
+                        print("  Prueba re-entrenar y exportar con TensorFlow 2.10-2.12.")
+                    raise
+                print(f"  Fallo, probando siguiente modelo...")
+                continue
 
         # Obtener indices de entrada y salida
         self.input_details = self.interpreter.get_input_details()
@@ -118,7 +154,7 @@ class EcoSortClassifier:
         print(f"  Output shape: {self.output_details[0]['shape']}")
 
         # Verificar tamaño del modelo
-        size_kb = os.path.getsize(model_path) / 1024
+        size_kb = os.path.getsize(loaded_path) / 1024
         print(f"  Tamaño:       {size_kb:.0f} KB")
 
     def _iniciar_camara(self):
