@@ -122,6 +122,13 @@ pip install RPi.GPIO numpy
 pip install tflite-runtime opencv-python-headless
 ```
 
+`opencv-python-headless` sirve para `classify.py` (sin ventana). Si quieres **ver el video en una ventana** (`preview_webcam_leds.py` o `test_with_webcam.py`), instala el paquete con GUI:
+
+```bash
+pip uninstall -y opencv-python-headless
+pip install opencv-python
+```
+
 ---
 
 ## 8. Modelo TFLite (solo cuando vayas a usar `classify.py`)
@@ -193,12 +200,22 @@ Así confirmas cableado y que Python habla con la Pi **sin cámara ni modelo**.
    ```bash
    pip install tflite-runtime opencv-python-headless
    ```
+   Para **preview en ventana** + LEDs automáticos:
+   ```bash
+   pip uninstall -y opencv-python-headless
+   pip install opencv-python
+   pip install tflite-runtime
+   ```
 3. Asegúrate de tener al menos un archivo `.tflite` en `models/`.
 4. Ejecuta:
    ```bash
    cd ~/ecoSortAI
    source venv/bin/activate
    python src/inference/classify.py
+   ```
+   O, con ventana de cámara y LEDs según la IA:
+   ```bash
+   python src/preview_webcam_leds.py
    ```
 5. Coloca el objeto frente a la cámara y **dispara** con el botón en GPIO 24 (o sensor IR). Si la confianza es ≥ 70%, se enciende el LED de esa clase.
 
@@ -236,6 +253,7 @@ Si falla con `0`, prueba cambiar a `1` en código o en otra ranura USB.
 | `No module named RPi` | `source venv/bin/activate` y `pip install RPi.GPIO` |
 | `rpi_test_leds` dice que no es Pi | Debe ejecutarse en la Pi, no en el Mac |
 | Sin modelo al correr `classify.py` | Copiar `.tflite` a `models/` |
+| `cv2.imshow` / «The function is not implemented» | Quita `opencv-python-headless` e instala `opencv-python`; hace falta escritorio o VNC, no solo SSH sin DISPLAY |
 
 ---
 

@@ -15,6 +15,9 @@ Uso:
   python src/preview_webcam_leds.py --camera 1 --interval 0.5
 
   q — salir
+
+En Raspberry Pi: hace falta **opencv-python** (con GUI), no *opencv-python-headless*,
+si quieres ver el preview en una ventana.
 """
 from __future__ import annotations
 
@@ -25,12 +28,10 @@ import threading
 import time
 
 import cv2
-import numpy as np
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__)))
 
 from config import (
-    CLASES,
     CONFIDENCE_THRESHOLD,
     IMG_SIZE,
     LED_PINS,
@@ -42,6 +43,19 @@ from config import (
 from test_with_webcam import ClasificadorKeras, ClasificadorSimulado, ClasificadorTFLite
 
 IS_RPI = os.path.exists("/proc/device-tree/model")
+
+# Un solo nombre ASCII: en GTK algunos caracteres Unicode en el título duplican ventanas.
+WINDOW_NAME = "EcoSort_camera"
+
+
+def _print_highgui_help():
+    print(
+        "\nOpenCV no puede mostrar ventanas (típico con opencv-python-headless).\n"
+        "En la Raspberry Pi, con el venv activado:\n"
+        "  pip uninstall -y opencv-python-headless\n"
+        "  pip install opencv-python\n\n"
+        "Si solo usas SSH: necesitas monitor, VNC o DISPLAY válido para ver UNA ventana.\n"
+    )
 
 
 def _tflite_candidates_laptop():
@@ -179,7 +193,18 @@ def main():
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
-    win = "EcoSort IA — cámara + detección → LED"
+    try:
+        cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_AUTOSIZE)
+    except cv2.error as e:
+        _print_highgui_help()
+        print(f"Detalle: {e}")
+        cap.release()
+        if gpio:
+            import RPi.GPIO as GPIO
+
+            GPIO.cleanup()
+        sys.exit(1)
+
     last_infer = 0.0
     last_led_trigger = 0.0
     ultima_clase = ""
@@ -264,12 +289,20 @@ def main():
                 h, w = display.shape[:2]
                 display[10 : 10 + ph, w - ph - 10 : w - 10] = preview_small
 
-            cv2.imshow(win, display)
+            try:
+                cv2.imshow(WINDOW_NAME, display)
+            except cv2.error as e:
+                _print_highgui_help()
+                print(f"Detalle: {e}")
+                break
             if cv2.waitKey(1) & 0xFF == ord("q"):
                 break
     finally:
         cap.release()
-        cv2.destroyAllWindows()
+        try:
+            cv2.destroyWindow(WINDOW_NAME)
+        except cv2.error:
+            pass
         if led_busy.is_set():
             time.sleep(0.05)
         if gpio:
