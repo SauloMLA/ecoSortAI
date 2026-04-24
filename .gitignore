@@ -1,5 +1,6 @@
 # Python
 venv/
+.venv/
 __pycache__/
 *.py[cod]
 *$py.class
@@ -9,14 +10,17 @@ dist/
 build/
 *.egg
 
-# Modelos (opcional: descomentar para subir .tflite)
-# models/*.keras
-# models/*.tflite
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Modelos y data pesada
 models/
-
-
-# Dataset (muy grande)
 dataset/
+
+# Carpeta interna de comité (no portfolio)
+_committee/
 
 # IDE
 .idea/
@@ -34,5 +38,3 @@ Thumbs.db
 
 # Jupyter
 .ipynb_checkpoints/
-models/
-dataset/
